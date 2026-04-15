@@ -1,0 +1,12 @@
+[package]
+name        = "skeepy-os-integration"
+version     = "0.1.0"
+edition     = "2021"
+description = "Windows OS integration — DPAPI token store, autostart, sleep/resume"
+
+[dependencies]
+skeepy-core = { path = "../../crates/core" }
+serde       = { workspace = true }
+thiserror   = { workspace = true }
+tracing     = { workspace = true }
+# TODO S04: keyring = "2" — added when implementing token store

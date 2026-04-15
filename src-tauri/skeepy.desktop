@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Skeepy Notes
+Comment=Multi-provider notes aggregator
+Exec=skeepy
+Icon=skeepy
+Terminal=false
+Type=Application
+Categories=Utility;Office;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true

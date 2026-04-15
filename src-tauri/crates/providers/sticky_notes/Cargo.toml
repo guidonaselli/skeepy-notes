@@ -1,0 +1,15 @@
+[package]
+name        = "skeepy-provider-sticky-notes"
+version     = "0.1.0"
+edition     = "2021"
+description = "Windows Sticky Notes provider for Skeepy (reads plum.sqlite)"
+
+[dependencies]
+skeepy-core = { path = "../../../crates/core" }
+async-trait = { workspace = true }
+chrono      = { workspace = true }
+thiserror   = { workspace = true }
+tracing     = { workspace = true }
+tokio       = { workspace = true }
+# Bundled SQLite — same as storage crate, no system dep required
+rusqlite    = { version = "0.31", features = ["bundled"] }

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Hide the app from the Dock — it lives in the menu bar tray only -->
+  <key>LSUIElement</key>
+  <true/>
+
+  <!-- Required for network access to provider APIs -->
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <false/>
+    <key>NSExceptionDomains</key>
+    <dict>
+      <key>localhost</key>
+      <dict>
+        <key>NSExceptionAllowsInsecureHTTPLoads</key>
+        <true/>
+      </dict>
+    </dict>
+  </dict>
+
+  <!-- Usage descriptions for macOS privacy prompts -->
+  <key>NSAppleEventsUsageDescription</key>
+  <string>Skeepy needs to handle OAuth redirects from your browser.</string>
+</dict>
+</plist>

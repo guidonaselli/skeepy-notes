@@ -1,0 +1,41 @@
+# Rust / Cargo
+target/
+Cargo.lock.bak
+
+# Node / Vite
+node_modules/
+dist/
+
+# Tauri
+src-tauri/gen/
+WixTools/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# Claude Code / shell tooling
+.bg-shell/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test output
+*.profraw
+
+# Keys / secrets — NEVER commit
+*.key
+*.pem

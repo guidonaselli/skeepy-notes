@@ -1,0 +1,19 @@
+[package]
+name        = "skeepy-provider-local"
+version     = "0.1.0"
+edition     = "2021"
+description = "Local JSON file provider for Skeepy"
+
+[dependencies]
+skeepy-core = { path = "../../../crates/core" }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+uuid        = { workspace = true }
+chrono      = { workspace = true }
+async-trait = { workspace = true }
+thiserror   = { workspace = true }
+tokio       = { workspace = true }
+tracing     = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

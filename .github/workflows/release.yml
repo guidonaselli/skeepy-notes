@@ -1,0 +1,175 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ─── Matrix release build ────────────────────────────────────────────────────
+  release:
+    name: Build & Release (${{ matrix.config.name }})
+    permissions:
+      contents: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - name: "Windows x64"
+            os: windows-latest
+            rust_target: x86_64-pc-windows-msvc
+            tauri_args: ""
+
+          - name: "macOS x64"
+            os: macos-13
+            rust_target: x86_64-apple-darwin
+            tauri_args: "--target x86_64-apple-darwin"
+
+          - name: "macOS ARM64"
+            os: macos-latest
+            rust_target: aarch64-apple-darwin
+            tauri_args: "--target aarch64-apple-darwin"
+
+          - name: "Linux x64"
+            os: ubuntu-22.04
+            rust_target: x86_64-unknown-linux-gnu
+            tauri_args: ""
+
+    runs-on: ${{ matrix.config.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.config.rust_target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+          key: ${{ matrix.config.rust_target }}
+
+      # Linux system deps (WebKit2GTK + tray icon support)
+      - name: Install Linux dependencies
+        if: matrix.config.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Run Rust tests
+        run: cargo test --workspace --exclude skeepy-app
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          NOTION_CLIENT_ID: ${{ secrets.NOTION_CLIENT_ID }}
+          NOTION_CLIENT_SECRET: ${{ secrets.NOTION_CLIENT_SECRET }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Skeepy Notes ${{ github.ref_name }}"
+          updaterJsonPreferNsis: true
+          releaseBody: |
+            ## Skeepy Notes ${{ github.ref_name }}
+
+            ### Instalación
+
+            | Plataforma | Archivo |
+            |------------|---------|
+            | Windows    | `.exe` (NSIS, instala sin admin) |
+            | macOS      | `.dmg` |
+            | Linux      | `.AppImage` o `.deb` |
+
+            ### Proveedores disponibles
+            - **Local** (siempre activo)
+            - **Windows Sticky Notes** (solo Windows)
+            - **Markdown Folder** — apuntá a cualquier carpeta de archivos `.md`
+            - **Obsidian Vault** — apuntá a tu vault
+            - **Google Keep** — requiere BYO OAuth credentials
+            - **OneNote** — requiere BYO Azure client ID
+            - **Notion** — requiere BYO OAuth integration
+
+            ### Datos de usuario
+            - Windows: `%APPDATA%\com.skeepy.notes\`
+            - macOS: `~/Library/Application Support/com.skeepy.notes/`
+            - Linux: `~/.local/share/com.skeepy.notes/`
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.config.tauri_args }}
+
+  # ─── CI (PR / push to main) ──────────────────────────────────────────────────
+  ci:
+    name: CI — ${{ matrix.os }}
+    if: github.event_name != 'push' || !startsWith(github.ref, 'refs/tags/')
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-22.04]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Vite build
+        run: npx vite build
+
+      - name: Rust check
+        run: cargo check --workspace
+
+      - name: Rust tests
+        run: cargo test --workspace --exclude skeepy-app

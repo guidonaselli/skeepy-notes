@@ -1,0 +1,33 @@
+[package]
+name        = "skeepy-provider-keep"
+version     = "0.1.0"
+edition     = "2021"
+description = "Google Keep provider for Skeepy (notes.googleapis.com/v1, read-only)"
+
+[dependencies]
+skeepy-core = { path = "../../../crates/core" }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+uuid        = { workspace = true }
+chrono      = { workspace = true }
+async-trait = { workspace = true }
+thiserror   = { workspace = true }
+tokio       = { workspace = true }
+tracing     = { workspace = true }
+
+# HTTP client (rustls avoids OpenSSL on Windows)
+reqwest     = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# Token storage via Windows Credential Manager / DPAPI
+keyring     = { version = "3", features = ["windows-native"] }
+
+# Rate limiting — stays under Google's API quotas
+governor    = "0.6"
+
+# PKCE helpers
+sha2        = "0.10"
+base64      = "0.22"
+rand        = "0.8"
+
+[dev-dependencies]
+tokio       = { workspace = true }

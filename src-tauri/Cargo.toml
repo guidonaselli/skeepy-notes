@@ -1,0 +1,40 @@
+[package]
+name        = "skeepy-app"
+version     = "0.1.0"
+edition     = "2021"
+description = "Skeepy Notes — Tauri desktop shell"
+
+[lib]
+name       = "skeepy_app_lib"
+crate-type = ["cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri                  = { version = "2", features = ["tray-icon", "image-png", "image-ico"] }
+tauri-plugin-autostart = "2"
+tauri-plugin-shell     = "2"
+tauri-plugin-oauth     = "2"
+tauri-plugin-updater   = "2"
+serde                  = { workspace = true }
+serde_json             = { workspace = true }
+tokio                  = { workspace = true }
+tracing                = { workspace = true }
+tracing-subscriber     = { version = "0.3", features = ["env-filter"] }
+async-trait            = { workspace = true }
+chrono                 = { workspace = true }
+uuid                   = { workspace = true }
+rusqlite               = { version = "0.31", features = ["bundled"] }
+skeepy-core            = { path = "crates/core" }
+skeepy-storage         = { path = "crates/storage" }
+skeepy-provider-local         = { path = "crates/providers/local" }
+skeepy-provider-keep          = { path = "crates/providers/keep" }
+skeepy-provider-markdown      = { path = "crates/providers/markdown" }
+skeepy-provider-onenote       = { path = "crates/providers/onenote" }
+skeepy-provider-obsidian      = { path = "crates/providers/obsidian" }
+skeepy-provider-notion        = { path = "crates/providers/notion" }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+skeepy-provider-sticky-notes  = { path = "crates/providers/sticky_notes" }
+reqwest                = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
