@@ -1,4 +1,5 @@
 import { type Component, createSignal, For, Show } from "solid-js";
+import { invoke } from "@tauri-apps/api/core";
 import type { Note, Point } from "@/types/note";
 import { updateLayout } from "@/stores/notes.store";
 import { ProviderBadge } from "./ProviderBadge";
@@ -53,11 +54,11 @@ export const NoteCard: Component<Props> = (props) => {
   // ── Content preview ────────────────────────────────────────────────────────
   const contentPreview = () => {
     const c = note().content;
-    if (c.type === "Text") return c.content.slice(0, 200);
-    return c.items.map((i) => (i.checked ? "✓ " : "○ ") + i.text).join("\n");
+    if (c.type === "text") return c.data.slice(0, 200);
+    return (c.data ?? []).map((i) => (i.checked ? "✓ " : "○ ") + i.text).join("\n");
   };
 
-  const isChecklist = () => note().content.type === "Checklist";
+  const isChecklist = () => note().content.type === "checklist";
 
   // Sync state badge
   const syncBadge = (): { icon: string; title: string; cls: string } | null => {
@@ -154,10 +155,26 @@ export const NoteCard: Component<Props> = (props) => {
             </span>
           )}
         </Show>
+        <Show when={layout().visible}>
+          <span class="note-card__floating" title="Flotando en el escritorio">⬡</span>
+        </Show>
+        <button
+          class="note-card__expand"
+          classList={{ "note-card__expand--active": layout().visible }}
+          title={layout().visible ? "Enfocar ventana" : "Abrir en escritorio"}
+          onClick={(e) => {
+            e.stopPropagation();
+            invoke("note_window_show", { id: note().id }).catch(() => {
+              props.onExpand?.();
+            });
+          }}
+        >
+          ⧉
+        </button>
         <Show when={props.onExpand}>
           <button
             class="note-card__expand"
-            title="Ver nota completa"
+            title="Ver detalle"
             onClick={(e) => { e.stopPropagation(); props.onExpand?.(); }}
           >
             ⤢
@@ -169,7 +186,7 @@ export const NoteCard: Component<Props> = (props) => {
       <div class="note-card__body">
         <Show when={!isChecklist()} fallback={
           <ul class="note-card__checklist">
-            <For each={(note().content as { type: "Checklist"; items: { text: string; checked: boolean }[] }).items}>
+            <For each={(note().content as { type: "checklist"; data: { text: string; checked: boolean }[] }).data ?? []}>
               {(item) => (
                 <li classList={{ checked: item.checked }}>
                   <span class="check-icon">{item.checked ? "✓" : "○"}</span>
@@ -184,9 +201,9 @@ export const NoteCard: Component<Props> = (props) => {
       </div>
 
       {/* Labels */}
-      <Show when={note().labels.length > 0}>
+      <Show when={(note().labels ?? []).length > 0}>
         <div class="note-card__labels">
-          <For each={note().labels}>
+          <For each={note().labels ?? []}>
             {(label) => <span class="label-chip">{label.name}</span>}
           </For>
         </div>

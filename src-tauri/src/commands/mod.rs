@@ -13,4 +13,5 @@ pub mod providers;
 pub mod settings;
 pub mod sync;
 pub mod updater;
+pub mod window;
 pub mod write;

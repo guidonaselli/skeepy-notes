@@ -220,6 +220,17 @@ html, body, #root {
   transition: color 0.12s, background 0.12s;
 }
 .note-card__expand:hover { color: #1a1a1a; background: rgba(0,0,0,0.08); }
+.note-card__expand--active { color: rgba(0,80,200,0.7); }
+.note-card__expand--active:hover { color: rgba(0,80,200,1); }
+
+.note-card__floating {
+  flex-shrink: 0;
+  font-size: 9px;
+  color: rgba(0,80,200,0.6);
+  line-height: 1;
+  cursor: default;
+  user-select: none;
+}
 
 .note-card__sync-badge {
   flex-shrink: 0;

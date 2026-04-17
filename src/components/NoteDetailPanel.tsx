@@ -55,7 +55,7 @@ export const NoteDetailPanel: Component<Props> = (props) => {
 
   function enterEdit() {
     setEditTitle(note().title ?? "");
-    setEditBody(note().content.type === "Text" ? (note().content as { type: "Text"; content: string }).content : "");
+    setEditBody(note().content.type === "text" ? (note().content as { type: "text"; data: string }).data : "");
     setEditMode(true);
   }
 
@@ -173,15 +173,15 @@ export const NoteDetailPanel: Component<Props> = (props) => {
           {/* Content */}
           <div class="detail-panel__body">
             <Show
-              when={note().content.type === "Checklist"}
+              when={note().content.type === "checklist"}
               fallback={
                 <p class="detail-panel__text">
-                  {(note().content as { type: "Text"; content: string }).content}
+                  {(note().content as { type: "text"; data: string }).data}
                 </p>
               }
             >
               <ul class="detail-panel__checklist">
-                <For each={(note().content as { type: "Checklist"; items: { text: string; checked: boolean }[] }).items}>
+                <For each={(note().content as { type: "checklist"; data: { text: string; checked: boolean }[] }).data ?? []}>
                   {(item) => (
                     <li class="detail-panel__checklist-item" classList={{ "is-checked": item.checked }}>
                       <span class="check-icon">{item.checked ? "✓" : "○"}</span>
@@ -194,9 +194,9 @@ export const NoteDetailPanel: Component<Props> = (props) => {
           </div>
 
           {/* Labels */}
-          <Show when={note().labels.length > 0}>
+          <Show when={(note().labels ?? []).length > 0}>
             <div class="detail-panel__labels">
-              <For each={note().labels}>
+              <For each={note().labels ?? []}>
                 {(label) => <span class="label-chip">{label.name}</span>}
               </For>
             </div>

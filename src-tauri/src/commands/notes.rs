@@ -5,6 +5,11 @@ use skeepy_core::{Note, NoteId, NoteLayout, NoteSearchResult};
 use crate::state::AppState;
 
 #[tauri::command]
+pub async fn note_get(state: State<'_, AppState>, id: NoteId) -> Result<Option<Note>, String> {
+    state.notes_repo.find_by_id(&id).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn notes_get_all(state: State<'_, AppState>) -> Result<Vec<Note>, String> {
     state.notes_repo.find_all().await.map_err(|e| e.to_string())
 }

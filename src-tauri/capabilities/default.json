@@ -1,10 +1,15 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default capabilities for Skeepy Notes",
-  "windows": ["main"],
+  "description": "Capabilities for the manager window and all note windows",
+  "windows": ["main", "note-*"],
   "permissions": [
     "core:default",
+    "core:window:allow-close",
+    "core:window:allow-set-focus",
+    "core:window:allow-start-dragging",
+    "core:window:allow-scale-factor",
+    "core:window:allow-set-always-on-top",
     "shell:allow-open",
     "autostart:allow-enable",
     "autostart:allow-disable",

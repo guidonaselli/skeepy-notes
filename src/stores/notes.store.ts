@@ -6,6 +6,7 @@ import {
   notesSearch,
   notesSearchSemantic,
   notesUpdateLayout,
+  onNoteLayoutChanged,
   type SemanticSearchResult,
 } from "@/services/tauri.service";
 import type { NoteLayout } from "@/types/note";
@@ -116,6 +117,17 @@ export async function updateLayout(id: NoteId, layout: NoteLayout): Promise<void
   } catch (e) {
     console.error("Failed to persist layout:", e);
   }
+}
+
+/**
+ * Subscribe to Rust-emitted layout change events (window open/close).
+ * Call once at app startup. Returns an unlisten function for cleanup.
+ */
+export async function initNoteWindowListener(): Promise<() => void> {
+  return onNoteLayoutChanged((_id) => {
+    // Reload the full note list so layout.visible is up to date.
+    void loadNotes();
+  });
 }
 
 export function upsertNote(note: Note): void {

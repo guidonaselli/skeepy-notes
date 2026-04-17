@@ -205,6 +205,29 @@ pub async fn note_update(
     Ok(synced_note)
 }
 
+/// Update only the color of a note (no content change).
+#[tauri::command]
+pub async fn note_update_color(
+    state: State<'_, AppState>,
+    id: NoteId,
+    color: NoteColor,
+) -> Result<Note, String> {
+    let existing = state
+        .notes_repo
+        .find_by_id(&id)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("Note {id} not found"))?;
+
+    let updated = Note {
+        color,
+        updated_at: chrono::Utc::now(),
+        ..existing
+    };
+    state.notes_repo.upsert(&updated).await.map_err(|e| e.to_string())?;
+    Ok(updated)
+}
+
 /// Delete a note. For local notes: soft-delete in SQLite.
 /// For provider-backed notes (e.g. Keep): delete via provider API, then soft-delete locally.
 #[tauri::command]

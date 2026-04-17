@@ -290,6 +290,20 @@ export const updaterCheck = (): Promise<UpdateInfo | null> =>
 export const updaterInstall = (): Promise<void> =>
   invoke<void>("updater_install");
 
+// ─── Window events ────────────────────────────────────────────────────────────
+
+/** Fired by Rust whenever a note's layout.visible changes (window opened or closed). */
+export const onNoteLayoutChanged = (
+  cb: (id: string) => void
+): Promise<UnlistenFn> =>
+  listen<{ id: string }>("note://layout-changed", (e) => cb(e.payload.id));
+
+/** Fired by Rust (tray "Nueva nota") to ask the manager to open the create modal. */
+export const onNoteCreateRequested = (
+  cb: () => void
+): Promise<UnlistenFn> =>
+  listen("note://create-requested", () => cb());
+
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
 export const getDataDir = (): Promise<string> => invoke<string>("get_data_dir");

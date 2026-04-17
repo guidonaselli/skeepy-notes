@@ -7,12 +7,13 @@ const UpdateBanner: Component = () => {
   const [installing, setInstalling] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
 
-  onMount(async () => {
-    const unlisten = await listen<{ version: string; notes: string }>("update://available", (e) => {
+  let unlisten: (() => void) | undefined;
+  onMount(() => {
+    listen<{ version: string; notes: string }>("update://available", (e) => {
       setUpdate(e.payload);
-    });
-    onCleanup(unlisten);
+    }).then((fn) => { unlisten = fn; });
   });
+  onCleanup(() => unlisten?.());
 
   async function install() {
     setInstalling(true);

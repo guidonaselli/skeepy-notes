@@ -1,8 +1,9 @@
 import { type Component, createResource, createSignal, For, onCleanup, onMount, Show } from "solid-js";
-import { labelsGetAll } from "@/services/tauri.service";
+import { invoke } from "@tauri-apps/api/core";
+import { labelsGetAll, onNoteCreateRequested } from "@/services/tauri.service";
 import { listen } from "@tauri-apps/api/event";
 import type { Note, SyncProgressEvent } from "@/types/note";
-import { loadNotes } from "@/stores/notes.store";
+import { initNoteWindowListener, loadNotes } from "@/stores/notes.store";
 import { initSyncListener, triggerSync } from "@/stores/sync.store";
 import { CreateNoteModal } from "@/components/CreateNoteModal";
 import { NoteDetailPanel } from "@/components/NoteDetailPanel";
@@ -20,8 +21,11 @@ const App: Component = () => {
   const [labelFilter, setLabelFilter] = createSignal<string | null>(null);
   const [allLabels] = createResource(labelsGetAll);
 
+  let unlistenNoteWindow: (() => void) | undefined;
+
   onMount(async () => {
     await initSyncListener();
+    unlistenNoteWindow = await initNoteWindowListener();
     await loadNotes();
     await triggerSync();
 
@@ -35,6 +39,11 @@ const App: Component = () => {
       setShowCreateModal(true);
     }
   }
+
+  // Open create modal when tray "Nueva nota" is clicked.
+  const unlistenCreatePromise = onNoteCreateRequested(() => {
+    if (!showCreateModal()) setShowCreateModal(true);
+  });
 
   // Listen for sync errors and surface them as dismissable banners.
   const unlistenPromise = listen<SyncProgressEvent>("sync://progress", (e) => {
@@ -50,6 +59,8 @@ const App: Component = () => {
 
   onCleanup(async () => {
     (await unlistenPromise)();
+    (await unlistenCreatePromise)();
+    unlistenNoteWindow?.();
     window.removeEventListener("keydown", handleGlobalKeyDown);
   });
 
@@ -138,7 +149,13 @@ const App: Component = () => {
           onCreated={async (note) => {
             setShowCreateModal(false);
             await loadNotes();
-            setSelectedNote(note);
+            // Open the new note as a sticky note window on the desktop
+            try {
+              await invoke("note_window_show", { id: note.id });
+            } catch (_) {
+              // Fallback: show detail panel if window creation fails
+              setSelectedNote(note);
+            }
           }}
           onClose={() => setShowCreateModal(false)}
         />

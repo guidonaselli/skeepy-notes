@@ -13,7 +13,7 @@ use tauri::{
 use tokio::sync::RwLock;
 use tracing::info;
 
-use skeepy_core::{NoteProvider, SettingsRepository};
+use skeepy_core::{NoteProvider, NoteRepository, SettingsRepository};
 use skeepy_provider_local::LocalProvider;
 use skeepy_provider_markdown::MarkdownProvider;
 use skeepy_provider_notion::provider::NotionProvider;
@@ -25,7 +25,7 @@ use skeepy_provider_onenote::TokenStorage as OneNoteTokenStorage;
 use skeepy_provider_sticky_notes::StickyNotesProvider;
 use skeepy_storage::{Database, SqliteNoteRepository, SqliteSettingsRepository};
 
-use crate::commands::{conflict, export, graph, keep, labels, markdown, notes, notion, obsidian, onenote, providers, search, settings, sync, updater, write};
+use crate::commands::{conflict, export, graph, keep, labels, markdown, notes, notion, obsidian, onenote, providers, search, settings, sync, updater, window, write};
 use crate::state::AppState;
 
 pub fn run() {
@@ -57,6 +57,8 @@ pub fn run() {
 
             let notes_repo = Arc::new(SqliteNoteRepository::new(Arc::clone(&db)));
             let settings_repo = Arc::new(SqliteSettingsRepository::new(Arc::clone(&db)));
+            // Clone for startup window creation (before notes_repo is moved into AppState).
+            let notes_repo_startup = Arc::clone(&notes_repo);
 
             // LocalProvider reads from <data_dir>/notes.json — no error if missing.
             let local_notes_path = data_dir.join("notes.json");
@@ -155,6 +157,43 @@ pub fn run() {
 
             app.manage(state);
 
+            // ── Open sticky note windows for all previously visible notes ──────
+            let startup_notes = tauri::async_runtime::block_on(
+                notes_repo_startup.find_all()
+            ).unwrap_or_default();
+
+            let visible_notes: Vec<_> = startup_notes
+                .into_iter()
+                .filter(|n| n.layout.visible && !n.is_trashed)
+                .collect();
+
+            for note in &visible_notes {
+                let label = format!("note-{}", note.id);
+                let pos = note.layout.position.unwrap_or(skeepy_core::Point { x: 120.0, y: 120.0 });
+                let size = note.layout.size.unwrap_or(skeepy_core::Size { width: 280.0, height: 220.0 });
+                let _ = tauri::WebviewWindowBuilder::new(
+                    app,
+                    &label,
+                    tauri::WebviewUrl::App(format!("index.html?note={}", note.id).into()),
+                )
+                .title("")
+                .inner_size(size.width as f64, size.height as f64)
+                .position(pos.x as f64, pos.y as f64)
+                .decorations(false)
+                .resizable(true)
+                .skip_taskbar(true)
+                .always_on_top(note.layout.always_on_top)
+                .build();
+            }
+
+            // Show manager only on first run (no notes yet); otherwise it stays hidden.
+            if let Some(main_win) = app.get_webview_window("main") {
+                if visible_notes.is_empty() {
+                    let _ = main_win.show();
+                    let _ = main_win.set_focus();
+                }
+            }
+
             setup_tray(app)?;
             setup_autostart(app);
 
@@ -171,10 +210,31 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            // X button hides the window instead of closing the process.
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                api.prevent_close();
-                let _ = window.hide();
+                let label = window.label().to_string();
+                if label == "main" {
+                    // Manager: hide instead of close so the process stays alive.
+                    api.prevent_close();
+                    let _ = window.hide();
+                } else if label.starts_with("note-") {
+                    // Sticky note window closed without going through the in-window
+                    // close button (e.g. Alt+F4, taskbar close). Persist visible=false.
+                    let id_str = label.trim_start_matches("note-").to_string();
+                    let app = window.app_handle().clone();
+                    tauri::async_runtime::spawn(async move {
+                        if let Ok(id) = id_str.parse::<uuid::Uuid>() {
+                            if let Some(state) = app.try_state::<AppState>() {
+                                if let Ok(Some(note)) = state.notes_repo.find_by_id(&id).await {
+                                    let mut layout = note.layout;
+                                    layout.visible = false;
+                                    let _ = state.notes_repo.update_layout(&id, &layout).await;
+                                    // Notify the manager so it refreshes the note's visual state.
+                                    let _ = app.emit("note://layout-changed", serde_json::json!({ "id": id.to_string() }));
+                                }
+                            }
+                        }
+                    });
+                }
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -210,6 +270,7 @@ pub fn run() {
             onenote::onenote_credentials_set,
             write::note_create,
             write::note_update,
+            write::note_update_color,
             write::note_delete,
             conflict::note_get_conflict,
             conflict::note_resolve_conflict,
@@ -222,6 +283,9 @@ pub fn run() {
             labels::label_delete,
             updater::updater_check,
             updater::updater_install,
+            window::note_window_show,
+            window::note_window_close,
+            notes::note_get,
             get_data_dir,
         ])
         .run(tauri::generate_context!())
@@ -231,11 +295,12 @@ pub fn run() {
 // ─── Tray ─────────────────────────────────────────────────────────────────────
 
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
-    let show = MenuItem::with_id(app, "show", "Mostrar Skeepy", true, None::<&str>)?;
+    let new_note = MenuItem::with_id(app, "new_note", "Nueva nota", true, None::<&str>)?;
+    let show = MenuItem::with_id(app, "show", "Mostrar manager", true, None::<&str>)?;
     let sync_now = MenuItem::with_id(app, "sync", "Sincronizar ahora", true, None::<&str>)?;
     let check_updates = MenuItem::with_id(app, "check_updates", "Buscar actualizaciones", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "Salir", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&show, &sync_now, &check_updates, &quit])?;
+    let menu = Menu::with_items(app, &[&new_note, &show, &sync_now, &check_updates, &quit])?;
 
     let icon = app
         .default_window_icon()
@@ -250,6 +315,14 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         .menu(&menu)
         .tooltip("Skeepy Notes")
         .on_menu_event(|app, event| match event.id().as_ref() {
+            "new_note" => {
+                // Show the manager and ask it to open the create modal immediately.
+                if let Some(w) = app.get_webview_window("main") {
+                    let _ = w.show();
+                    let _ = w.set_focus();
+                }
+                let _ = app.emit("note://create-requested", ());
+            }
             "show" => {
                 if let Some(w) = app.get_webview_window("main") {
                     let _ = w.show();

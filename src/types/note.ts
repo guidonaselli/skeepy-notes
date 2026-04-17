@@ -31,9 +31,11 @@ export interface ChecklistItem {
   checked: boolean;
 }
 
+// Matches Rust: #[serde(tag = "type", content = "data", rename_all = "snake_case")]
+// Serializes as { type: "text", data: "..." } or { type: "checklist", data: [...] }
 export type NoteContent =
-  | { type: "Text"; content: string }
-  | { type: "Checklist"; items: ChecklistItem[] };
+  | { type: "text"; data: string }
+  | { type: "checklist"; data: ChecklistItem[] };
 
 export interface Label {
   id: string;

@@ -19,7 +19,7 @@ export const NoteGrid: Component<Props> = (props) => {
   const notes = () => {
     const label = props.labelFilter;
     if (!label) return baseNotes();
-    return baseNotes().filter((n) => n.labels.some((l) => l.name === label));
+    return baseNotes().filter((n) => (n.labels ?? []).some((l) => l.name === label));
   };
 
   return (
