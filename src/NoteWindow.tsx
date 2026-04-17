@@ -11,6 +11,13 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Note, NoteColor } from "@/types/note";
+import {
+  IconPushPin,
+  IconPushPinSlash,
+  IconPencilSimple,
+  IconCheck,
+  IconX,
+} from "@/components/Icons";
 import "./styles/note-window.css";
 
 interface Props {
@@ -224,7 +231,10 @@ const NoteWindow: Component<Props> = (props) => {
                     style={{ "background-color": hdr() }}
                     onClick={(e) => { e.stopPropagation(); togglePin(); }}
                   >
-                    📌
+                    {pinned()
+                      ? <IconPushPin size={14} />
+                      : <IconPushPinSlash size={14} />
+                    }
                   </button>
                 </Show>
 
@@ -242,7 +252,9 @@ const NoteWindow: Component<Props> = (props) => {
 
                 {/* Edit / Save / Cancel */}
                 <Show when={editable() && !editMode()}>
-                  <button class="note-win__btn" title="Editar (Ctrl+E)" onClick={enterEdit}>✎</button>
+                  <button class="note-win__btn" title="Editar (Ctrl+E)" onClick={enterEdit}>
+                    <IconPencilSimple size={14} />
+                  </button>
                 </Show>
                 <Show when={editMode()}>
                   <button
@@ -251,14 +263,18 @@ const NoteWindow: Component<Props> = (props) => {
                     onClick={saveEdit}
                     disabled={saving()}
                   >
-                    {saving() ? "…" : "✓"}
+                    {saving() ? "…" : <IconCheck size={14} />}
                   </button>
-                  <button class="note-win__btn" title="Cancelar (Esc)" onClick={() => setEditMode(false)}>✕</button>
+                  <button class="note-win__btn" title="Cancelar (Esc)" onClick={() => setEditMode(false)}>
+                    <IconX size={14} />
+                  </button>
                 </Show>
 
                 {/* Close */}
                 <Show when={!editMode()}>
-                  <button class="note-win__btn note-win__btn--close" title="Cerrar" onClick={closeNote}>✕</button>
+                  <button class="note-win__btn note-win__btn--close" title="Cerrar" onClick={closeNote}>
+                    <IconX size={14} />
+                  </button>
                 </Show>
               </div>
             </div>

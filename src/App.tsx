@@ -11,6 +11,7 @@ import { NoteGrid } from "@/components/NoteGrid";
 import { SearchBar } from "@/components/SearchBar";
 import { Settings } from "@/components/Settings";
 import UpdateBanner from "@/components/UpdateBanner";
+import { IconPlus, IconArrowClockwise, IconGearSix } from "@/components/Icons";
 import "./styles/global.css";
 
 const App: Component = () => {
@@ -74,21 +75,21 @@ const App: Component = () => {
             title="Nueva nota (Ctrl+N)"
             onClick={() => setShowCreateModal(true)}
           >
-            ＋
+            <IconPlus size={16} />
           </button>
           <button
             class="btn btn--icon"
             title="Sincronizar"
             onClick={triggerSync}
           >
-            ↻
+            <IconArrowClockwise size={16} />
           </button>
           <button
             class="btn btn--icon"
             title="Configuración"
             onClick={() => setShowSettings((v) => !v)}
           >
-            ⚙
+            <IconGearSix size={16} />
           </button>
         </div>
       </header>

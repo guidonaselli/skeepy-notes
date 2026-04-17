@@ -3,6 +3,7 @@ import type { Note } from "@/types/note";
 import { noteUpdate, noteDelete } from "@/services/tauri.service";
 import { ProviderBadge } from "./ProviderBadge";
 import { ConflictPanel } from "./ConflictPanel";
+import { IconPushPin } from "./Icons";
 
 interface Props {
   note: Note;
@@ -110,7 +111,7 @@ export const NoteDetailPanel: Component<Props> = (props) => {
           <div class="detail-panel__meta">
             <ProviderBadge providerId={note().provider_id} />
             <Show when={note().is_pinned}>
-              <span class="detail-panel__pin" title="Pinned">📌</span>
+              <span class="detail-panel__pin" title="Pinned"><IconPushPin size={13} /></span>
             </Show>
           </div>
           <div class="detail-panel__actions">

@@ -14,6 +14,8 @@
     "autostart:allow-enable",
     "autostart:allow-disable",
     "autostart:allow-is-enabled",
-    "updater:default"
+    "updater:default",
+    "oauth:allow-start",
+    "oauth:allow-cancel"
   ]
 }

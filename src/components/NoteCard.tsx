@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { Note, Point } from "@/types/note";
 import { updateLayout } from "@/stores/notes.store";
 import { ProviderBadge } from "./ProviderBadge";
+import { IconPushPin, IconArrowSquareOut, IconArrowsOutSimple } from "./Icons";
 
 interface Props {
   note: Note;
@@ -139,7 +140,9 @@ export const NoteCard: Component<Props> = (props) => {
         style={{ "background-color": headerColor() }}
       >
         <Show when={note().is_pinned}>
-          <span class="note-card__pin" title="Pinned">📌</span>
+          <span class="note-card__pin" title="Pinned">
+            <IconPushPin size={12} />
+          </span>
         </Show>
         <Show when={note().title}>
           <h3 class="note-card__title">{note().title}</h3>
@@ -155,9 +158,6 @@ export const NoteCard: Component<Props> = (props) => {
             </span>
           )}
         </Show>
-        <Show when={layout().visible}>
-          <span class="note-card__floating" title="Flotando en el escritorio">⬡</span>
-        </Show>
         <button
           class="note-card__expand"
           classList={{ "note-card__expand--active": layout().visible }}
@@ -169,7 +169,7 @@ export const NoteCard: Component<Props> = (props) => {
             });
           }}
         >
-          ⧉
+          <IconArrowSquareOut size={13} />
         </button>
         <Show when={props.onExpand}>
           <button
@@ -177,7 +177,7 @@ export const NoteCard: Component<Props> = (props) => {
             title="Ver detalle"
             onClick={(e) => { e.stopPropagation(); props.onExpand?.(); }}
           >
-            ⤢
+            <IconArrowsOutSimple size={13} />
           </button>
         </Show>
       </div>
