@@ -377,9 +377,8 @@ mod tests {
 
     #[test]
     fn title_case_capitalizes_first_char() {
-        assert_eq!(title_case("hello world"), "hello world".to_string());
-        // Actually title_case only uppercases the first char
-        let result = title_case("hello world");
-        assert!(result.starts_with('H'));
+        assert_eq!(title_case("hello world"), "Hello world".to_string());
+        assert_eq!(title_case("ALREADY UPPER"), "ALREADY UPPER".to_string());
+        assert_eq!(title_case(""), "".to_string());
     }
 }
