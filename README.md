@@ -1,70 +1,94 @@
 # Skeepy Notes
 
-Agregador de notas local para Windows. Muestra tus notas de Google Keep (y más providers próximamente) como sticky notes en tu escritorio, vive en el system tray, consume < 50MB de RAM en idle y arranca en menos de 1 segundo.
+Agregador de notas local y de escritorio. Unifica tus notas de Google Keep, Microsoft OneNote, Notion, Obsidian y carpetas Markdown en un solo lugar, como sticky notes en tu escritorio. Vive en el system tray, consume < 50 MB de RAM en idle y arranca en menos de 1 segundo.
 
-**No es un cliente de Google Keep.** Keep es un provider opcional — la app funciona perfectamente sin él.
+**No es un cliente de Google Keep.** Keep es un provider opcional — la app funciona perfectamente sin ningún provider externo.
 
 ---
 
 ## Características
 
-- Notas como cards arrastrables con posición y tamaño persistente
-- Búsqueda full-text ultrarrápida (SQLite FTS5, < 50ms en 1000 notas)
-- Google Keep como provider de lectura (OAuth2, sin servidor propio)
-- Notas locales via archivo JSON
-- Vive en el system tray, arranca con Windows
-- Sin telemetría, sin cuenta requerida, datos 100% locales
+- **Providers soportados:** notas locales, Google Keep, Microsoft OneNote, Notion, Obsidian Vault, Carpeta Markdown, Windows Sticky Notes (solo Windows)
+- **Sticky notes en el escritorio** — ventanas nativas sin decoración, arrastrables, redimensionables, siempre visibles (pinned), con color propio
+- **Búsqueda full-text** ultrarrápida (SQLite FTS5, < 50ms en 1000 notas)
+- **Búsqueda semántica** (TF-IDF, toggle desde la barra de búsqueda)
+- **Escritura y edición** de notas en providers que lo soportan (local, Keep, OneNote, Notion)
+- **Resolución de conflictos** — UI diff local vs. remoto cuando hay edición simultánea
+- **Labels / Tags** — filtro por etiqueta, renombrar, eliminar
+- **Export** a JSON o Markdown
+- **Auto-update** — notificación en tray y banner en manager cuando hay nueva versión
+- **Smart Sync Scheduler** — sincronización adaptativa según tu historial de uso
+- System tray, autostart con el sistema, sin cuenta requerida, sin telemetría
 
-## Requisitos
+## Plataformas
 
-- Windows 10 o superior (WebView2 viene preinstalado desde Windows 10)
-- No requiere permisos de administrador
+| OS | Soporte |
+|----|---------|
+| Windows 10+ | Completo (WebView2 preinstalado) |
+| macOS 10.15+ | Completo (sin Sticky Notes provider) |
+| Linux | Completo (sin Sticky Notes provider) |
 
 ## Instalación
 
 1. Descargá el instalador desde [Releases](../../releases/latest)
-2. Ejecutá `Skeepy_x.x.x_x64-setup.exe` (instalación en modo usuario, sin admin)
-3. La app aparece en el system tray — buscá el ícono en la barra de tareas
+2. **Windows:** ejecutá `Skeepy_x.x.x_x64-setup.exe` (instalación en modo usuario, sin admin)
+3. **macOS:** abrí el `.dmg` y arrastrá la app a Aplicaciones
+4. La app aparece en el system tray — buscá el ícono en la barra de tareas
 
-## Notas locales
+Al iniciar por primera vez, el manager se abre con una pantalla de bienvenida donde podés conectar tus providers. Si tenías sticky notes abiertas en la sesión anterior, se restauran automáticamente.
 
-Creá un archivo `notes.json` en:
+## Providers
+
+### Notas locales
+
+Creá notas directamente en la app (Ctrl+N o el botón ＋). Se guardan en:
 
 ```
-%APPDATA%\com.skeepy.notes\notes.json
+%APPDATA%\com.skeepy.notes\   (Windows)
+~/Library/Application Support/com.skeepy.notes/   (macOS)
+~/.local/share/com.skeepy.notes/   (Linux)
 ```
 
-Formato de ejemplo:
+### Google Keep
 
-```json
-[
-  {
-    "id": "1",
-    "title": "Mi primera nota",
-    "content": "Hola mundo",
-    "color": "yellow",
-    "pinned": false
-  }
-]
-```
+1. Abrí Settings (⚙) → sección **Google Keep** → **Conectar**
+2. Tu browser se abre con la autorización de Google
+3. Aceptá los permisos → la app se conecta automáticamente
 
-## Conectar Google Keep
+> Usa el scope `keep.readonly` — solo lectura desde Keep. Podés crear y editar notas localmente.
 
-1. Abrí Skeepy → click derecho en el tray → **Mostrar Skeepy**
-2. Andá a **Configuración** (ícono de engranaje)
-3. En la sección **Google Keep**, hacé click en **Conectar Google Keep**
-4. Tu browser se abre con la pantalla de autorización de Google
-5. Aceptá los permisos → la app se conecta automáticamente
+> **Usuarios avanzados:** expandí "Credenciales personalizadas" en Settings para usar tu propio proyecto de Google Cloud Console.
 
-> **Nota:** La app usa el scope `keep.readonly` — solo lectura, nunca escribe ni elimina tus notas de Keep.
+### Microsoft OneNote
 
-> **Usuarios avanzados:** Si querés usar tu propia app de Google Cloud Console, expandí "Credenciales personalizadas" en Settings y pegá tu Client ID y Client Secret.
+1. Settings → **Microsoft OneNote** → **Conectar**
+2. Iniciá sesión con tu cuenta Microsoft
+
+> **Usuarios avanzados:** podés registrar tu propia app en Azure Portal y usar tu Application ID.
+
+### Notion
+
+1. Registrá una integración pública en [notion.so/profile/integrations](https://notion.so/profile/integrations)
+2. Settings → **Notion** → expandí "Credenciales de integración" → pegá tu Client ID, Client Secret y Parent Page ID
+3. Hacé click en **Conectar**
+
+### Carpeta Markdown
+
+Settings → **Carpeta Markdown** → pegá la ruta a tu carpeta. Todos los `.md` se importan como notas.
+
+### Obsidian Vault
+
+Settings → **Obsidian Vault** → pegá la ruta a tu vault. Los backlinks `[[…]]` se convierten a texto y los `#tags` inline se extraen como labels.
+
+### Windows Sticky Notes
+
+Se detecta automáticamente en Windows — no requiere configuración. Importa las notas del sistema desde la base de datos de Sticky Notes.
 
 ## Privacidad
 
-- Todos los datos se almacenan localmente en `%APPDATA%\com.skeepy.notes\`
-- Los tokens de Google se guardan en Windows Credential Manager (cifrado por el OS)
-- Skeepy no tiene servidor propio — el flujo OAuth es directo entre tu PC y Google
+- Todos los datos se almacenan localmente
+- Los tokens OAuth se guardan en el keychain del sistema (Windows Credential Manager / macOS Keychain / libsecret en Linux) — nunca en texto plano
+- Skeepy no tiene servidor propio — el flujo OAuth es directo entre tu PC y el provider
 - Sin telemetría, sin analytics, sin datos enviados a terceros
 
 ## Compilar desde el código fuente
