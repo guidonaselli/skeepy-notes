@@ -11,7 +11,7 @@ import { NoteGrid } from "@/components/NoteGrid";
 import { SearchBar } from "@/components/SearchBar";
 import { Settings } from "@/components/Settings";
 import UpdateBanner from "@/components/UpdateBanner";
-import { IconPlus, IconArrowClockwise, IconGearSix } from "@/components/Icons";
+import { IconPlus, IconArrowClockwise, IconGearSix, IconX } from "@/components/Icons";
 import "./styles/global.css";
 
 const App: Component = () => {
@@ -104,12 +104,12 @@ const App: Component = () => {
                 <strong>{err.provider}</strong>: {err.message}
               </span>
               <div class="sync-error-banner__actions">
-                <button class="btn btn--icon btn--small" title="Reintentar" onClick={triggerSync}>↻</button>
+                <button class="btn btn--icon btn--small" title="Reintentar" onClick={triggerSync}><IconArrowClockwise size={14} /></button>
                 <button
                   class="btn btn--icon btn--small"
                   title="Cerrar"
                   onClick={() => setSyncErrors((p) => p.filter((x) => x.provider !== err.provider))}
-                >✕</button>
+                ><IconX size={14} /></button>
               </div>
             </div>
           ))}

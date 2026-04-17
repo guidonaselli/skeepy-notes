@@ -1,6 +1,7 @@
 import { type Component, createSignal, onMount } from "solid-js";
 import type { Note } from "@/types/note";
 import { noteCreate } from "@/services/tauri.service";
+import { IconX } from "@/components/Icons";
 
 interface Props {
   onCreated: (note: Note) => void;
@@ -57,7 +58,7 @@ export const CreateNoteModal: Component<Props> = (props) => {
       <div class="modal-panel" onKeyDown={handleKeyDown}>
         <div class="modal-panel__header">
           <h2 class="modal-panel__title">Nueva nota</h2>
-          <button class="modal-panel__close" onClick={props.onClose} aria-label="Cerrar">✕</button>
+          <button class="modal-panel__close" onClick={props.onClose} aria-label="Cerrar"><IconX size={15} /></button>
         </div>
 
         <div class="modal-panel__body">

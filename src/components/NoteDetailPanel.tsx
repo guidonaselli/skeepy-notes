@@ -3,7 +3,7 @@ import type { Note } from "@/types/note";
 import { noteUpdate, noteDelete } from "@/services/tauri.service";
 import { ProviderBadge } from "./ProviderBadge";
 import { ConflictPanel } from "./ConflictPanel";
-import { IconPushPin } from "./Icons";
+import { IconPushPin, IconPencilSimple, IconX } from "./Icons";
 
 interface Props {
   note: Note;
@@ -116,7 +116,7 @@ export const NoteDetailPanel: Component<Props> = (props) => {
           </div>
           <div class="detail-panel__actions">
             <Show when={isEditable() && !editMode() && !isConflict()}>
-              <button class="detail-panel__action-btn" title="Editar" onClick={enterEdit}>✎</button>
+              <button class="detail-panel__action-btn" title="Editar" onClick={enterEdit}><IconPencilSimple size={15} /></button>
             </Show>
             <button class="detail-panel__action-btn detail-panel__action-btn--danger" title="Eliminar" onClick={handleDelete} disabled={deleting()}>🗑</button>
             <Show when={editMode()}>
@@ -125,7 +125,7 @@ export const NoteDetailPanel: Component<Props> = (props) => {
               </button>
               <button class="btn btn--small" onClick={() => setEditMode(false)}>Cancelar</button>
             </Show>
-            <button class="detail-panel__close" onClick={props.onClose} aria-label="Cerrar">✕</button>
+            <button class="detail-panel__close" onClick={props.onClose} aria-label="Cerrar"><IconX size={15} /></button>
           </div>
         </div>
 

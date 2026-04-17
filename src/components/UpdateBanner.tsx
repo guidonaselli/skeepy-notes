@@ -1,6 +1,7 @@
 import { type Component, createSignal, onCleanup, onMount, Show } from "solid-js";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
+import { IconX } from "./Icons";
 
 const UpdateBanner: Component = () => {
   const [update, setUpdate] = createSignal<{ version: string; notes: string } | null>(null);
@@ -50,7 +51,7 @@ const UpdateBanner: Component = () => {
               title="Recordarme después"
               onClick={() => setUpdate(null)}
             >
-              ✕
+              <IconX size={14} />
             </button>
           </div>
         </div>

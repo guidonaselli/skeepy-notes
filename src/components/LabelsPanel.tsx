@@ -1,5 +1,6 @@
 import { type Component, createResource, createSignal, For, Show } from "solid-js";
 import { labelsGetAll, labelRename, labelDelete, type LabelInfo } from "@/services/tauri.service";
+import { IconPencilSimple, IconX } from "./Icons";
 
 export const LabelsPanel: Component = () => {
   const [labels, { refetch }] = createResource<LabelInfo[]>(labelsGetAll);
@@ -71,7 +72,7 @@ export const LabelsPanel: Component = () => {
                   <div class="labels-panel__actions">
                     <Show when={label.is_local}>
                       <button class="btn btn--small" onClick={() => startEdit(label)} disabled={busy()}>
-                        ✎
+                        <IconPencilSimple size={13} />
                       </button>
                       <button class="btn btn--small btn--danger" onClick={() => handleDelete(label.name)} disabled={busy()}>
                         🗑
