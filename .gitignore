@@ -40,5 +40,5 @@ npm-debug.log*
 *.key
 *.pem
 
-# Planning / agent working directory — internal, not for contributors
+# Planning
 .gsd/
