@@ -982,3 +982,132 @@ html, body, #root {
   gap: 4px;
   flex-shrink: 0;
 }
+
+/* ─── Welcome / onboarding screen ───────────────────────────────────────── */
+.welcome {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 40px 24px 32px;
+  overflow-y: auto;
+}
+
+.welcome > * {
+  max-width: 680px;
+}
+
+.welcome__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.welcome__logo {
+  font-size: 48px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 12px rgba(74,158,255,0.3));
+}
+
+.welcome__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.welcome__subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.welcome__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: min(680px, 100%);
+  align-self: center;
+}
+
+.welcome__card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  transition: border-color 0.15s;
+}
+.welcome__card:hover { border-color: rgba(74,158,255,0.3); }
+
+.welcome__card-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.welcome__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.welcome__card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.welcome__card-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.welcome__card-btn {
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 5px 12px;
+  background: rgba(74,158,255,0.15);
+  color: var(--accent);
+  border: 1px solid rgba(74,158,255,0.25);
+}
+.welcome__card-btn:hover {
+  background: rgba(74,158,255,0.25);
+}
+
+.welcome__badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #4caf50;
+  white-space: nowrap;
+}
+
+.welcome__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.welcome__create-btn {
+  padding: 10px 24px;
+  font-size: 14px;
+}
+
+.welcome__footer-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.5;
+}

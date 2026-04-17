@@ -141,6 +141,8 @@ const App: Component = () => {
         <NoteGrid
           onNoteExpand={(note) => setSelectedNote(note)}
           labelFilter={labelFilter()}
+          onOpenSettings={() => setShowSettings(true)}
+          onCreateNote={() => setShowCreateModal(true)}
         />
       </main>
 

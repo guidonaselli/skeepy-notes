@@ -2,11 +2,14 @@ import { type Component, For, Show } from "solid-js";
 import type { Note } from "@/types/note";
 import { notesStore } from "@/stores/notes.store";
 import { NoteCard } from "./NoteCard";
+import { WelcomeScreen } from "./WelcomeScreen";
 
 interface Props {
   onNoteExpand?: (note: Note) => void;
   /** When set, only notes that carry this label name are shown. */
   labelFilter?: string | null;
+  onOpenSettings?: () => void;
+  onCreateNote?: () => void;
 }
 
 export const NoteGrid: Component<Props> = (props) => {
@@ -22,6 +25,9 @@ export const NoteGrid: Component<Props> = (props) => {
     return baseNotes().filter((n) => (n.labels ?? []).some((l) => l.name === label));
   };
 
+  const showWelcome = () =>
+    !notesStore.loading && !notesStore.isSearching && notes().length === 0;
+
   return (
     <div class="note-grid">
       <Show when={notesStore.loading}>
@@ -30,14 +36,18 @@ export const NoteGrid: Component<Props> = (props) => {
       <Show when={notesStore.error}>
         <div class="note-grid__error">Error: {notesStore.error}</div>
       </Show>
-      <Show when={!notesStore.loading && notes().length === 0}>
+      <Show when={!notesStore.loading && notesStore.isSearching && notes().length === 0}>
         <div class="note-grid__empty">
-          {notesStore.isSearching
-            ? notesStore.mode === "semantic"
-              ? "Sin resultados semánticos — el índice puede estar construyéndose."
-              : "Sin resultados para esta búsqueda."
-            : "No hay notas. Creá un archivo notes.json en tu carpeta de datos."}
+          {notesStore.mode === "semantic"
+            ? "Sin resultados semánticos — el índice puede estar construyéndose."
+            : "Sin resultados para esta búsqueda."}
         </div>
+      </Show>
+      <Show when={showWelcome()}>
+        <WelcomeScreen
+          onOpenSettings={props.onOpenSettings ?? (() => {})}
+          onCreateNote={props.onCreateNote ?? (() => {})}
+        />
       </Show>
       <For each={notes()}>
         {(note) => (
