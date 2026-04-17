@@ -1,9 +1,9 @@
 # GSD State
 
-**Active Milestone:** M007 + M008 (en progreso en paralelo)
-**Active Slice:** S32-S34 (M007 cross-platform), S37 (semantic search TF-IDF), S41 (smart sync)
-**Active Task:** M007 build configs done. M008 S37 infraestructura done. S41 smart scheduler done.
-**Phase:** M006 completo. M007 S32-S34 done. M008 S37 infra + S41 done.
+**Active Milestone:** M007 + M008 + S42 (en progreso en paralelo)
+**Active Slice:** S32-S34 (M007 cross-platform), S37 (semantic search TF-IDF), S41 (smart sync), S42 (Popout Sticky Note Window)
+**Active Task:** S42 implementado. Falta verificación de compilación y UAT.
+**Phase:** M006 completo. M007 S32-S34 done. M008 S37 infra + S41 done. S42 código listo.
 
 ## Completed Slices
 - [x] **S01: Core Domain** — 21 tests passing.
@@ -53,7 +53,7 @@
 
 ## Next Action
 
-**Listo para publicar.** Único paso pendiente:
+**S42 completo. Listo para publicar.** Único paso pendiente:
 
 ```
 pwsh scripts\setup-release.ps1 -GithubUser TU_USUARIO
@@ -83,6 +83,9 @@ El CI genera el NSIS installer firmado + `latest.json` y publica el release.
 ## Completed M008 Slices
 - [x] **S41: Smart Sync Scheduler** — usage_events SQLite table, histogram 168-slot weekday×hour, predicts next peak
 - [x] **S37 infra: Semantic Search (TF-IDF)** — migration 004_embeddings, tfidf.rs vectorizer, indexer.rs background indexing + cosine search, notes_search_semantic IPC, SearchBar FTS↔semantic toggle
+
+## Completed Untracked Slices
+- [x] **S42: Popout Sticky Note Window** — Ventanas nativas decoración-less por nota. `window.rs` (note_window_show / note_window_close IPC). `NoteWindow.tsx` + `note-window.css` (drag nativo startDragging, resize, persist layout on move/resize, color picker, edit inline Ctrl+S/Esc, 📌 always-on-top toggle). `main.tsx` enruta `?note=ID` → NoteWindow. Startup restore: notas con layout.visible=true + always_on_top se reabren al iniciar. CloseRequested Alt+F4 persiste visible=false. NoteCard botón ⧉ azul cuando nota está flotando + indicador ⬡. Manager se refresca via evento `note://layout-changed`. Tray "Nueva nota" abre manager + modal via `note://create-requested`. Capabilities: `note-*` + `allow-scale-factor` + `allow-set-always-on-top`. DECISIONS.md: D022-D024.
 
 ## Post-V1 Backlog
 
