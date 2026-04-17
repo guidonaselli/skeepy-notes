@@ -39,3 +39,6 @@ npm-debug.log*
 # Keys / secrets — NEVER commit
 *.key
 *.pem
+
+# Planning / agent working directory — internal, not for contributors
+.gsd/
