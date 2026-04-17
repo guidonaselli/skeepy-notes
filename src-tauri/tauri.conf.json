@@ -4,7 +4,8 @@
   "identifier": "com.skeepy.notes",
   "build": {
     "frontendDist": "../dist",
-    "devUrl": "http://localhost:1420"
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build"
   },
   "app": {
     "windows": [
