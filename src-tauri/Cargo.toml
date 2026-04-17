@@ -34,7 +34,7 @@ skeepy-provider-markdown      = { path = "crates/providers/markdown" }
 skeepy-provider-onenote       = { path = "crates/providers/onenote" }
 skeepy-provider-obsidian      = { path = "crates/providers/obsidian" }
 skeepy-provider-notion        = { path = "crates/providers/notion" }
+reqwest                = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 skeepy-provider-sticky-notes  = { path = "crates/providers/sticky_notes" }
-reqwest                = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
