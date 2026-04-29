@@ -16,6 +16,8 @@ pub struct AppSettings {
     pub enabled_providers: Vec<ProviderId>,
     /// Telemetry is OFF by default — must be explicitly opted in.
     pub telemetry_enabled: bool,
+    /// Render note content as Markdown in read mode.
+    pub markdown_preview: bool,
 }
 
 impl Default for AppSettings {
@@ -28,6 +30,7 @@ impl Default for AppSettings {
             theme: Theme::System,
             enabled_providers: vec!["local".to_string()],
             telemetry_enabled: false,
+            markdown_preview: false,
         }
     }
 }

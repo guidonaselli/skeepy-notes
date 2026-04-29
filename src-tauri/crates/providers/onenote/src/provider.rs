@@ -208,7 +208,7 @@ impl NoteProvider for OneNoteProvider {
             NoteContent::Checklist(ref items) => checklist_to_html(items),
         };
 
-        self.api
+        let page = self.api
             .update_page(
                 &access_token,
                 source_id,
@@ -219,14 +219,15 @@ impl NoteProvider for OneNoteProvider {
 
         info!(page_id = %source_id, "Updated page in OneNote");
 
-        // Graph PATCH returns 204 No Content, so we reconstruct the RemoteNote.
-        let now = Utc::now();
         let text = match req.content {
             NoteContent::Text(ref t) => t.clone(),
             NoteContent::Checklist(ref items) => {
                 items.iter().map(|i| i.text.as_str()).collect::<Vec<_>>().join("\n")
             }
         };
+
+        let updated_at = parse_ms_datetime(&page.last_modified_date_time)
+            .unwrap_or_else(Utc::now);
 
         Ok(RemoteNote {
             source_id: source_id.to_string(),
@@ -237,8 +238,8 @@ impl NoteProvider for OneNoteProvider {
             is_pinned: false,
             is_archived: false,
             is_trashed: false,
-            created_at: now,
-            updated_at: now,
+            created_at: updated_at,
+            updated_at,
         })
     }
 

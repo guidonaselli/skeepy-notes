@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use tauri::{
     menu::{Menu, MenuItem},
-    tray::TrayIconBuilder,
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Emitter, Manager,
 };
 use tokio::sync::RwLock;
@@ -316,18 +316,11 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         .tooltip("Skeepy Notes")
         .on_menu_event(|app, event| match event.id().as_ref() {
             "new_note" => {
-                // Show the manager and ask it to open the create modal immediately.
-                if let Some(w) = app.get_webview_window("main") {
-                    let _ = w.show();
-                    let _ = w.set_focus();
-                }
+                show_main_window(app);
                 let _ = app.emit("note://create-requested", ());
             }
             "show" => {
-                if let Some(w) = app.get_webview_window("main") {
-                    let _ = w.show();
-                    let _ = w.set_focus();
-                }
+                show_main_window(app);
             }
             "sync" => {
                 let app = app.clone();
@@ -361,9 +354,34 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
             "quit" => app.exit(0),
             _ => {}
         })
+        .on_tray_icon_event(|tray, event| {
+            let app = tray.app_handle();
+            match event {
+                // Single left click or double click = open manager (Windows convention)
+                TrayIconEvent::Click {
+                    button: MouseButton::Left,
+                    button_state: MouseButtonState::Up,
+                    ..
+                } => {
+                    show_main_window(app);
+                }
+                TrayIconEvent::DoubleClick { .. } => {
+                    show_main_window(app);
+                }
+                // Right click shows menu automatically via Tauri
+                _ => {}
+            }
+        })
         .build(app)?;
 
     Ok(())
+}
+
+fn show_main_window(app: &tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.show();
+        let _ = w.set_focus();
+    }
 }
 
 // ─── Autostart ────────────────────────────────────────────────────────────────

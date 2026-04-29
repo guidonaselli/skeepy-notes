@@ -1,11 +1,12 @@
 import { type Component, createResource, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
-import { labelsGetAll, onNoteCreateRequested } from "@/services/tauri.service";
+import { labelsGetAll, onNoteCreateRequested, settingsGet } from "@/services/tauri.service";
 import { listen } from "@tauri-apps/api/event";
-import type { Note, SyncProgressEvent } from "@/types/note";
+import type { AppSettings, Note, SyncProgressEvent } from "@/types/note";
 import { initNoteWindowListener, loadNotes } from "@/stores/notes.store";
 import { initSyncListener, triggerSync } from "@/stores/sync.store";
 import { CreateNoteModal } from "@/components/CreateNoteModal";
+import { ParticleBackground } from "@/components/ParticleBackground";
 import { NoteDetailPanel } from "@/components/NoteDetailPanel";
 import { NoteGrid } from "@/components/NoteGrid";
 import { SearchBar } from "@/components/SearchBar";
@@ -21,6 +22,7 @@ const App: Component = () => {
   const [syncErrors, setSyncErrors] = createSignal<{ provider: string; message: string }[]>([]);
   const [labelFilter, setLabelFilter] = createSignal<string | null>(null);
   const [allLabels] = createResource(labelsGetAll);
+  const [settings] = createResource<AppSettings>(settingsGet);
 
   let unlistenNoteWindow: (() => void) | undefined;
 
@@ -67,6 +69,7 @@ const App: Component = () => {
 
   return (
     <div class="app">
+      <ParticleBackground />
       <header class="app__toolbar">
         <SearchBar />
         <div class="app__toolbar-actions">
@@ -167,6 +170,7 @@ const App: Component = () => {
       <Show when={selectedNote()}>
         <NoteDetailPanel
           note={selectedNote()!}
+          markdownPreview={settings()?.markdown_preview ?? false}
           onClose={() => setSelectedNote(null)}
           onNoteUpdated={async (updated) => {
             setSelectedNote(updated);

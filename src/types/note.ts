@@ -92,6 +92,7 @@ export interface AppSettings {
   theme: "system" | "light" | "dark";
   enabled_providers: string[];
   telemetry_enabled: boolean;
+  markdown_preview: boolean;
 }
 
 export interface SyncProgressEvent {

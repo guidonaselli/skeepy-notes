@@ -59,46 +59,61 @@ impl OneNoteApiClient {
         Self { http }
     }
 
-    /// Fetch all pages from all sections of all notebooks.
-    /// Returns tuples of (Page, section_display_name).
+    /// Fetch all pages across all notebooks and sections (including Quick Notes).
+    /// Uses the flat /pages endpoint with $expand=parentSection to get section names.
     pub async fn list_all_pages(
         &self,
         access_token: &str,
     ) -> Result<Vec<(Page, String)>, ProviderError> {
-        // 1. List notebooks
-        let notebooks = self.list_all::<Notebook>(
-            access_token,
-            &format!("{GRAPH_BASE}/notebooks"),
-        ).await?;
+        let url = format!("{GRAPH_BASE}/pages");
+        let mut all = Vec::new();
+        let mut next_url = Some(url);
 
-        let mut all_pages = Vec::new();
+        while let Some(current_url) = next_url {
+            let mut last_err = ProviderError::Api("No attempts made".to_string());
+            let page_list: ODataList<Page> = 'retry: {
+                for attempt in 0u32..3 {
+                    if attempt > 0 {
+                        tokio::time::sleep(std::time::Duration::from_secs(2u64.pow(attempt))).await;
+                    }
+                    let resp = self
+                        .http
+                        .get(&current_url)
+                        .bearer_auth(access_token)
+                        .query(&[("$top", "100"), ("$expand", "parentSection")])
+                        .send()
+                        .await
+                        .map_err(|e| ProviderError::Api(format!("OneNote list request failed: {e}")))?;
 
-        for nb in &notebooks {
-            let sections = self.list_all::<Section>(
-                access_token,
-                &format!("{GRAPH_BASE}/notebooks/{}/sections", nb.id),
-            ).await?;
-
-            for section in &sections {
-                let pages = self.list_all::<Page>(
-                    access_token,
-                    &format!("{GRAPH_BASE}/sections/{}/pages", section.id),
-                ).await?;
-
-                debug!(
-                    notebook = %nb.display_name,
-                    section = %section.display_name,
-                    count = pages.len(),
-                    "Fetched pages"
-                );
-
-                for page in pages {
-                    all_pages.push((page, section.display_name.clone()));
+                    let status = resp.status().as_u16();
+                    if is_retryable(status) {
+                        last_err = ProviderError::Api(format!("OneNote API error: HTTP {status}"));
+                        continue;
+                    }
+                    check_status(&resp)?;
+                    break 'retry resp
+                        .json()
+                        .await
+                        .map_err(|e| ProviderError::Api(format!("OneNote list parse error: {e}")))?;
                 }
+                return Err(last_err);
+            };
+
+            debug!(count = page_list.value.len(), "Fetched pages from OneNote");
+
+            for page in page_list.value {
+                let section_name = page
+                    .parent_section
+                    .as_ref()
+                    .map(|s| s.display_name.clone())
+                    .unwrap_or_default();
+                all.push((page, section_name));
             }
+
+            next_url = page_list.next_link;
         }
 
-        Ok(all_pages)
+        Ok(all)
     }
 
     /// Fetch the HTML content of a single page.
@@ -107,19 +122,32 @@ impl OneNoteApiClient {
         access_token: &str,
         page_id: &str,
     ) -> Result<String, ProviderError> {
-        let resp = self
-            .http
-            .get(format!("{GRAPH_BASE}/pages/{page_id}/content"))
-            .bearer_auth(access_token)
-            .send()
-            .await
-            .map_err(|e| ProviderError::Api(format!("OneNote content request failed: {e}")))?;
+        let url = format!("{GRAPH_BASE}/pages/{page_id}/content");
+        let mut last_err = ProviderError::Api("No attempts made".to_string());
+        for attempt in 0u32..3 {
+            if attempt > 0 {
+                tokio::time::sleep(std::time::Duration::from_secs(2u64.pow(attempt))).await;
+            }
+            let resp = self
+                .http
+                .get(&url)
+                .bearer_auth(access_token)
+                .send()
+                .await
+                .map_err(|e| ProviderError::Api(format!("OneNote content request failed: {e}")))?;
 
-        check_status(&resp)?;
-
-        resp.text()
-            .await
-            .map_err(|e| ProviderError::Api(format!("OneNote content parse error: {e}")))
+            let status = resp.status().as_u16();
+            if is_retryable(status) {
+                last_err = ProviderError::Api(format!("OneNote API error: HTTP {status}"));
+                continue;
+            }
+            check_status(&resp)?;
+            return resp
+                .text()
+                .await
+                .map_err(|e| ProviderError::Api(format!("OneNote content parse error: {e}")));
+        }
+        Err(last_err)
     }
 
     /// Create a new page in a section.
@@ -131,7 +159,7 @@ impl OneNoteApiClient {
         body_html: &str,
     ) -> Result<Page, ProviderError> {
         let html = format!(
-            "<!DOCTYPE html><html><head><title>{title}</title></head><body>{body_html}</body></html>",
+            "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>{title}</title></head><body>{body_html}</body></html>",
             title = html_escape(title),
             body_html = body_html
         );
@@ -157,13 +185,14 @@ impl OneNoteApiClient {
     ///
     /// Microsoft Graph uses a JSON patch-command format.
     /// Replacing `body` with `action: "replace"` rewrites the page body.
+    /// Update page content and return updated Page metadata with real timestamps.
     pub async fn update_page(
         &self,
         access_token: &str,
         page_id: &str,
         title: Option<&str>,
         body_html: &str,
-    ) -> Result<(), ProviderError> {
+    ) -> Result<Page, ProviderError> {
         let mut commands: Vec<serde_json::Value> = vec![
             serde_json::json!({
                 "target": "body",
@@ -191,7 +220,19 @@ impl OneNoteApiClient {
             .map_err(|e| ProviderError::Api(format!("OneNote update page request failed: {e}")))?;
 
         check_status(&resp)?;
-        Ok(())
+
+        // PATCH returns 204 — fetch real lastModifiedDateTime so the local
+        // updated_at matches what the next sync will see from OneNote.
+        self.get_page_meta(access_token, page_id).await
+    }
+
+    pub async fn get_page_meta(
+        &self,
+        access_token: &str,
+        page_id: &str,
+    ) -> Result<Page, ProviderError> {
+        let url = format!("{GRAPH_BASE}/pages/{page_id}");
+        self.get_with_retry(&url, access_token, &[]).await
     }
 
     /// Delete a page.
@@ -228,27 +269,48 @@ impl OneNoteApiClient {
         let mut next_url = Some(url.to_string());
 
         while let Some(current_url) = next_url {
-            let resp = self
-                .http
-                .get(&current_url)
-                .bearer_auth(access_token)
-                .query(&[("$top", "100")])
-                .send()
-                .await
-                .map_err(|e| ProviderError::Api(format!("OneNote list request failed: {e}")))?;
-
-            check_status(&resp)?;
-
-            let page: ODataList<T> = resp
-                .json()
-                .await
-                .map_err(|e| ProviderError::Api(format!("OneNote list parse error: {e}")))?;
-
+            let page: ODataList<T> = self
+                .get_with_retry(&current_url, access_token, &[("$top", "100")])
+                .await?;
             all.extend(page.value);
             next_url = page.next_link;
         }
 
         Ok(all)
+    }
+
+    async fn get_with_retry<T: for<'de> serde::de::DeserializeOwned>(
+        &self,
+        url: &str,
+        access_token: &str,
+        query: &[(&str, &str)],
+    ) -> Result<T, ProviderError> {
+        let mut last_err = ProviderError::Api("No attempts made".to_string());
+        for attempt in 0u32..3 {
+            if attempt > 0 {
+                tokio::time::sleep(std::time::Duration::from_secs(2u64.pow(attempt))).await;
+            }
+            let resp = self
+                .http
+                .get(url)
+                .bearer_auth(access_token)
+                .query(query)
+                .send()
+                .await
+                .map_err(|e| ProviderError::Api(format!("OneNote request failed: {e}")))?;
+
+            let status = resp.status().as_u16();
+            if is_retryable(status) {
+                last_err = ProviderError::Api(format!("OneNote API error: HTTP {status}"));
+                continue;
+            }
+            check_status(&resp)?;
+            return resp
+                .json()
+                .await
+                .map_err(|e| ProviderError::Api(format!("OneNote response parse error: {e}")));
+        }
+        Err(last_err)
     }
 }
 
@@ -264,6 +326,10 @@ fn check_status(resp: &reqwest::Response) -> Result<(), ProviderError> {
         )));
     }
     Ok(())
+}
+
+fn is_retryable(status: u16) -> bool {
+    matches!(status, 429 | 500 | 502 | 503 | 504)
 }
 
 fn html_escape(s: &str) -> String {

@@ -1,5 +1,6 @@
 import { type Component } from "solid-js";
 import { searchNotes, notesStore, setSearchMode } from "@/stores/notes.store";
+import { IconMagnifyingGlass } from "@/components/Icons";
 
 export const SearchBar: Component = () => {
   const toggleMode = () => {
@@ -13,7 +14,7 @@ export const SearchBar: Component = () => {
 
   return (
     <div class="search-bar">
-      <span class="search-bar__icon">🔍</span>
+      <span class="search-bar__icon"><IconMagnifyingGlass size={14} /></span>
       <input
         type="search"
         class="search-bar__input"

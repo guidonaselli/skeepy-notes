@@ -192,6 +192,16 @@ fn copy_to_temp(src: &PathBuf) -> std::io::Result<PathBuf> {
     let mut tmp = std::env::temp_dir();
     tmp.push("skeepy_sticky_notes_snap.sqlite");
     std::fs::copy(src, &tmp)?;
+
+    // Copy WAL and SHM files if they exist — without them the snapshot is incomplete
+    for ext in ["-wal", "-shm"] {
+        let src_side = src.with_extension(format!("sqlite{ext}"));
+        let dst_side = tmp.with_extension(format!("sqlite{ext}"));
+        if src_side.exists() {
+            let _ = std::fs::copy(&src_side, &dst_side);
+        }
+    }
+
     Ok(tmp)
 }
 

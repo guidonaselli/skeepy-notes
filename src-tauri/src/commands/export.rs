@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use tauri::{AppHandle, Manager, State};
 use tracing::info;
 
-use skeepy_core::{NoteContent, NoteRepository};
+use skeepy_core::NoteContent;
 
 use crate::state::AppState;
 

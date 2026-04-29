@@ -1,7 +1,7 @@
 use serde::Serialize;
 use tauri::State;
 
-use skeepy_core::{Note, NoteRepository};
+use skeepy_core::Note;
 
 use crate::semantic::indexer;
 use crate::state::AppState;

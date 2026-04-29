@@ -3,6 +3,7 @@ import type { Note } from "@/types/note";
 import { noteUpdate, noteDelete } from "@/services/tauri.service";
 import { ProviderBadge } from "./ProviderBadge";
 import { ConflictPanel } from "./ConflictPanel";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 import { IconPushPin, IconPencilSimple, IconX } from "./Icons";
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
   onClose: () => void;
   onNoteUpdated?: (note: Note) => void;
   onNoteDeleted?: (noteId: string) => void;
+  markdownPreview?: boolean;
 }
 
 const COLOR_MAP: Record<string, string> = {
@@ -53,6 +55,7 @@ export const NoteDetailPanel: Component<Props> = (props) => {
   const [editBody, setEditBody] = createSignal("");
   const [saving, setSaving] = createSignal(false);
   const [deleting, setDeleting] = createSignal(false);
+  const [mdPreview, setMdPreview] = createSignal(props.markdownPreview ?? false);
 
   function enterEdit() {
     setEditTitle(note().title ?? "");
@@ -115,6 +118,14 @@ export const NoteDetailPanel: Component<Props> = (props) => {
             </Show>
           </div>
           <div class="detail-panel__actions">
+            <Show when={note().content.type === "text" && !editMode() && !isConflict()}>
+              <button
+                class="detail-panel__action-btn"
+                classList={{ "is-active": mdPreview() }}
+                title={mdPreview() ? "Ver texto plano" : "Ver como Markdown"}
+                onClick={() => setMdPreview((v) => !v)}
+              >MD</button>
+            </Show>
             <Show when={isEditable() && !editMode() && !isConflict()}>
               <button class="detail-panel__action-btn" title="Editar" onClick={enterEdit}><IconPencilSimple size={15} /></button>
             </Show>
@@ -176,9 +187,19 @@ export const NoteDetailPanel: Component<Props> = (props) => {
             <Show
               when={note().content.type === "checklist"}
               fallback={
-                <p class="detail-panel__text">
-                  {(note().content as { type: "text"; data: string }).data}
-                </p>
+                <Show
+                  when={mdPreview()}
+                  fallback={
+                    <p class="detail-panel__text">
+                      {(note().content as { type: "text"; data: string }).data}
+                    </p>
+                  }
+                >
+                  <MarkdownRenderer
+                    content={(note().content as { type: "text"; data: string }).data}
+                    class="detail-panel__text"
+                  />
+                </Show>
               }
             >
               <ul class="detail-panel__checklist">

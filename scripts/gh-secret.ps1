@@ -1,4 +1,4 @@
-$env_file = Join-Path $PSScriptRoot ".env"
+$env_file = Join-Path $PSScriptRoot ".." ".env"
 $vars = Get-Content $env_file | Where-Object { $_ -match "^\s*[^#].*=.*" } | ForEach-Object {
     $parts = $_ -split "=", 2
     [PSCustomObject]@{ Key = $parts[0].Trim(); Value = $parts[1].Trim() }

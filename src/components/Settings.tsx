@@ -5,6 +5,7 @@ import { ProviderStatusPanel } from "@/components/ProviderStatusPanel";
 import { LabelsPanel } from "@/components/LabelsPanel";
 import { open as shellOpen } from "@tauri-apps/plugin-shell";
 import { start as oauthStart, cancel as oauthCancel } from "@fabianlars/tauri-plugin-oauth";
+import { triggerSync } from "@/stores/sync.store";
 import {
   settingsGet,
   settingsSet,
@@ -212,6 +213,7 @@ export const Settings: Component = () => {
       await refetchKeepStatus();
       setConnectStatus("idle");
       setKeepAction("¡Conectado exitosamente!");
+      triggerSync();
 
     } catch (e) {
       await cleanup();
@@ -314,7 +316,7 @@ export const Settings: Component = () => {
     }
 
     try {
-      port = await oauthStart();
+      port = await oauthStart({ ports: [48542] });
       const redirectUri = `http://localhost:${port}`;
 
       const { auth_url, state: csrfState } = await notionStartAuth(redirectUri);
@@ -354,6 +356,7 @@ export const Settings: Component = () => {
       await refetchNotionStatus();
       setNotionConnectStatus("idle");
       setNotionAction("¡Conectado exitosamente!");
+      triggerSync();
 
     } catch (e) {
       await cleanup();
@@ -457,6 +460,7 @@ export const Settings: Component = () => {
       await refetchOneNoteStatus();
       setOneNoteConnectStatus("idle");
       setOneNoteAction("¡Conectado exitosamente!");
+      triggerSync();
 
     } catch (e) {
       await cleanup();
@@ -523,6 +527,15 @@ export const Settings: Component = () => {
           type="checkbox"
           checked={settings()?.show_in_tray ?? true}
           onChange={(e) => save({ show_in_tray: e.currentTarget.checked })}
+        />
+      </div>
+
+      <div class="settings-panel__row">
+        <label>Renderizar Markdown</label>
+        <input
+          type="checkbox"
+          checked={settings()?.markdown_preview ?? false}
+          onChange={(e) => save({ markdown_preview: e.currentTarget.checked })}
         />
       </div>
 
